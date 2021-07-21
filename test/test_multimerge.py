@@ -104,5 +104,8 @@ class TestMerge(unittest.TestCase):
             mo = merge(range(10), key=object(), reverse=reverse)
             self.assertRaises(TypeError, list, merge)
 
+    def test_failure(self):
+        raise ZeroDivisionError()
+
 if __name__ == "__main__":
     unittest.main()
