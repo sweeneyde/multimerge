@@ -9,11 +9,12 @@ class TestMerge(unittest.TestCase):
 
     module = multimerge
 
-    def test_merge(self):
+    def test_merge_random(self):
         lengths = range(25)
         keys = [None, itemgetter(0), itemgetter(1), itemgetter(1, 0)]
         reverses = [False, True]
-        for n, key, reverse in product(lengths, keys, reverses):
+        repeats = range(100)
+        for n, key, reverse, i, in product(lengths, keys, reverses, repeats):
             inputs = [
                 sorted(
                     [(random.choice('ABC'), random.randrange(-500, 500))
@@ -102,3 +103,6 @@ class TestMerge(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, mo)
             mo = merge(range(10), key=object(), reverse=reverse)
             self.assertRaises(TypeError, list, merge)
+
+if __name__ == "__main__":
+    unittest.main()
