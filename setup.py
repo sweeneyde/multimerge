@@ -10,7 +10,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Dennis Sweeney",
-    author_email="sweeney.dennis650@osu.edu",
+    author_email="sweeney.427@osu.edu",
     license="MIT",
     ext_modules=[Extension("multimerge", ["multimergemodule.c"])],
     classifiers=[
