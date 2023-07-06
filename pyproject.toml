@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=59.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+test-command = "python {project}/test/test_multimerge.py"
+
+[project]
+name = "multimerge"
+version = "0.2.0"
+authors = [
+  { name="Dennis Sweeney", email="sweeney.427@osu.edu" },
+]
+description = "a k-way merge algorithm to replace heapq.merge"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/sweeneyde/multimerge"
+"Bug Tracker" = "https://github.com/sweeneyde/multimerge"
