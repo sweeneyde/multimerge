@@ -58,6 +58,39 @@ Algorithm for multimerge.merge:
     - The merge object holds the sole strong reference to the root.
 */
 
+typedef struct merge_state {
+    PyObject *merge_type;
+} merge_state;
+
+static merge_state *
+get_merge_state(PyObject *module)
+{
+    return (merge_state *)PyModule_GetState(module);
+}
+
+static int
+mergemodule_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    merge_state *state = get_merge_state(module);
+    Py_VISIT(state->merge_type);
+    return 0;
+}
+
+static int
+mergemodule_clear(PyObject *module)
+{
+    merge_state *state = get_merge_state(module);
+    Py_CLEAR(state->merge_type);
+    return 0;
+}
+
+static void
+mergemodule_free(PyObject *module)
+{
+    merge_state *state = get_merge_state(module);
+    Py_CLEAR(state->merge_type);
+}
+
 /* merge node object ********************************************************/
 
 struct merge_node;
@@ -575,25 +608,34 @@ its sort order.\n\
 >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))\n\
 ['dog', 'cat', 'fish', 'horse', 'kangaroo']");
 
-static PyTypeObject merge_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "multimerge.merge",
-    .tp_basicsize = sizeof(mergeobject),
-    .tp_dealloc = (destructor)merge_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_doc = merge_doc,
-    .tp_traverse = (traverseproc)merge_traverse,
-    .tp_clear = (inquiry)merge_clear,
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)merge_next,
-    .tp_new = merge_new,
-    .tp_free = PyObject_GC_Del,
+static PyType_Slot merge_type_slots[] = {
+    {Py_tp_dealloc, merge_dealloc},
+    {Py_tp_doc, (void *)merge_doc},
+    {Py_tp_traverse, merge_traverse},
+    {Py_tp_clear, merge_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, merge_next},
+    {Py_tp_new, merge_new},
+    {0, NULL},
+};
+
+static PyType_Spec merge_type_spec = {
+    .name = "multimerge.merge",
+    .basicsize = sizeof(mergeobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = merge_type_slots,
 };
 
 static int
-multimerge_exec(PyObject *m)
+multimerge_exec(PyObject *module)
 {
-    return PyModule_AddType(m, &merge_type);
+    merge_state *state = get_merge_state(module);
+    state->merge_type = PyType_FromModuleAndSpec(module,
+                                                 &merge_type_spec, NULL);
+    if (state->merge_type == NULL) {
+        return -1;
+    }
+    return PyModule_AddType(module, state->merge_type);
 }
 
 static struct PyModuleDef_Slot multimerge_slots[] = {
@@ -604,9 +646,13 @@ static struct PyModuleDef_Slot multimerge_slots[] = {
 static struct PyModuleDef multimergemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "multimerge",
+    .m_size = sizeof(merge_state),
     .m_doc = "implements a k-way merge algorithm as a drop-in\n\
 replacement for heapq.merge in the Python standard library",
     .m_slots = multimerge_slots,
+    .m_traverse = mergemodule_traverse,
+    .m_clear = mergemodule_clear,
+    .m_free = mergemodule_free,
 };
 
 PyMODINIT_FUNC
