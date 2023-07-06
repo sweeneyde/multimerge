@@ -575,25 +575,33 @@ its sort order.\n\
 >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))\n\
 ['dog', 'cat', 'fish', 'horse', 'kangaroo']");
 
-static PyTypeObject merge_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "multimerge.merge",
-    .tp_basicsize = sizeof(mergeobject),
-    .tp_dealloc = (destructor)merge_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_doc = merge_doc,
-    .tp_traverse = (traverseproc)merge_traverse,
-    .tp_clear = (inquiry)merge_clear,
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)merge_next,
-    .tp_new = merge_new,
-    .tp_free = PyObject_GC_Del,
+static PyType_Slot merge_type_slots[] = {
+    {Py_tp_dealloc, merge_dealloc},
+    {Py_tp_doc, (void *)merge_doc},
+    {Py_tp_traverse, merge_traverse},
+    {Py_tp_clear, merge_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, merge_next},
+    {Py_tp_new, merge_new},
+    {0, NULL},
+};
+
+static PyType_Spec merge_type_spec = {
+    .name = "multimerge.merge",
+    .basicsize = sizeof(mergeobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = merge_type_slots,
 };
 
 static int
-multimerge_exec(PyObject *m)
+multimerge_exec(PyObject *mod)
 {
-    return PyModule_AddType(m, &merge_type);
+    PyTypeObject *merge;
+    merge = PyType_FromModuleAndSpec(mod, &merge_type_spec, NULL);
+    if (merge == NULL) {
+        return -1;
+    }
+    return PyModule_AddType(mod, merge);
 }
 
 static struct PyModuleDef_Slot multimerge_slots[] = {
