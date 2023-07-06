@@ -58,6 +58,39 @@ Algorithm for multimerge.merge:
     - The merge object holds the sole strong reference to the root.
 */
 
+typedef struct merge_state {
+    PyObject *merge_type;
+} merge_state;
+
+static merge_state *
+get_merge_state(PyObject *module)
+{
+    return (merge_state *)PyModule_GetState(module);
+}
+
+static int
+mergemodule_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    merge_state *state = get_merge_state(module);
+    Py_VISIT(state->merge_type);
+    return 0;
+}
+
+static int
+mergemodule_clear(PyObject *module)
+{
+    merge_state *state = get_merge_state(module);
+    Py_CLEAR(state->merge_type);
+    return 0;
+}
+
+static void
+mergemodule_free(PyObject *module)
+{
+    merge_state *state = get_merge_state(module);
+    Py_CLEAR(state->merge_type);
+}
+
 /* merge node object ********************************************************/
 
 struct merge_node;
@@ -594,14 +627,15 @@ static PyType_Spec merge_type_spec = {
 };
 
 static int
-multimerge_exec(PyObject *mod)
+multimerge_exec(PyObject *module)
 {
-    PyTypeObject *merge;
-    merge = PyType_FromModuleAndSpec(mod, &merge_type_spec, NULL);
-    if (merge == NULL) {
+    merge_state *state = get_merge_state(module);
+    state->merge_type = PyType_FromModuleAndSpec(module,
+                                                 &merge_type_spec, NULL);
+    if (state->merge_type == NULL) {
         return -1;
     }
-    return PyModule_AddType(mod, merge);
+    return PyModule_AddType(module, state->merge_type);
 }
 
 static struct PyModuleDef_Slot multimerge_slots[] = {
@@ -612,9 +646,13 @@ static struct PyModuleDef_Slot multimerge_slots[] = {
 static struct PyModuleDef multimergemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "multimerge",
+    .m_size = sizeof(merge_state),
     .m_doc = "implements a k-way merge algorithm as a drop-in\n\
 replacement for heapq.merge in the Python standard library",
     .m_slots = multimerge_slots,
+    .m_traverse = mergemodule_traverse,
+    .m_clear = mergemodule_clear,
+    .m_free = mergemodule_free,
 };
 
 PyMODINIT_FUNC
