@@ -429,8 +429,6 @@ replay_games(mergeobject *mo)
     case 1:
         /* got a value */
         break;
-    default:
-        Py_UNREACHABLE();
     }
 
     #define DO_GAMES(OP1, OP2) do {                              \
@@ -480,8 +478,6 @@ merge_next(mergeobject *mo)
         break;
     case 2:
         return NULL;
-    default:
-        Py_UNREACHABLE();
     }
     return leaf_pop_item(mo->root->leaf);
 }
