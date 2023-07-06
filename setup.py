@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="multimerge",
-    version="0.1",
+    version="0.2.0",
     description="A faster multi-way merge algorithm interchangeable with heapq.merge",
     long_description=long_description,
     long_description_content_type="text/markdown",
