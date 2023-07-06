@@ -9,6 +9,10 @@ on:
     types:
       - published
 
+env:
+  # skip pypy
+  CIBW_SKIP: pp*
+
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
